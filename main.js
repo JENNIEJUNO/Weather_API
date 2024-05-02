@@ -27,16 +27,59 @@ let weatherList = []
 let dateList = []
 //forecast page
 let pageNum = 1;
+let search_city_tf = false;
+
+//검색창 사이즈에 따라 없애기
+window.addEventListener('resize', function(){
+    if(document.body.clientWidth >= 600){
+        search_city_tf = false;
+        document.querySelector('.search_city').style.display = 'block';
+    }else{
+        document.querySelector('.search_city').style.display = 'none';
+    }
+})
+
+function search_city(){
+    if(search_city_tf == false){
+        document.querySelector('.search_city').style.display = 'block';
+        search_city_tf = true;
+    }
+    else{
+        document.querySelector('.search_city').style.display = 'none';
+        search_city_tf = false;
+    }
+}
+
+//현재 날씨 아이콘
+const weather_icon = (weatherDescription, time) => {
+    if(weatherDescription == 'clear sky'){
+        if(time < 6) return '🌙'; else return '☀️'
+    }
+    else if(weatherDescription == 'few clouds'){
+        if(time < 6) return '☁️'; else return '🌤️'
+    }
+    else if(weatherDescription == 'scattered clouds' || 'broken clouds') return '☁️'
+    else if(weatherDescription == 'shower rain' || 'rain') return '🌧️'
+    else if(weatherDescription == 'thunderstorm') return '🌩️'
+    else if(weatherDescription == 'snow') return '🌨️'
+    else if(weatherDescription == 'mist') return '🌫️'
+}
 
 const errorMethod = (error) => {
     let errorHTML = 
     `<div class="search_box">
-        <button class="burger"><i class="fa-solid fa-bars"></i></button>
-        <input type="text" class="search_city" placeholder="search city">
-        <button class="find_city" onclick="find_city()">find</button>
+        <div>
+            <button class="MyLocation" onclick="myLocation()">My location</button>
+        </div>
+        <div class="inputButton">
+            <input type="text" class="search_city" placeholder="search city">
+            <button class="search_icon" onclick="search_city()"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button class="find_city" onclick="find_city()">find</button>
+        </div>
     </div>
     <div class="alert alert-primary" role="alert">
         ${error}
+
     </div>`
 
     document.querySelector('.current_weather').innerHTML = errorHTML
@@ -73,7 +116,8 @@ const paginationMethod = () => {
 //도시 검색
 const find_city = () => {
     let city = document.querySelector('.search_city').value
-    url = new URL(`httP://api.openweathermap.org/data/2.5/forecast?lang=kr&q=${city}&appid=${API_KEY}&units=metric`)
+    url = new URL(`httP://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${API_KEY}&units=metric`)
+    pageNum = 1 // page를 다시 1번으로
     NoRepeat()
 }
 
@@ -83,13 +127,20 @@ const render = () => {
     //현재 날씨 정보
     let current_renderHTML = 
     `<div class="search_box">
-        <button class="burger"><i class="fa-solid fa-bars"></i></button>
-        <input type="text" class="search_city" placeholder="search city">
-        <button class="find_city" onclick="find_city()">find</button>
+        <div>
+            <button class="MyLocation" onclick="myLocation()">My location</button>
+        </div>
+        <div class="inputButton">
+            <input type="text" class="search_city" placeholder="search city">
+            <button class="search_icon" onclick="search_city()"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button class="find_city" onclick="find_city()">find</button>
+        </div>
     </div>
     <div class="city_name" style="color:white; font-weight:700;">${data.city.name}</div>
     <div class="current_temp">
-    <div class="current_icon">☀️</div>
+    <div class="current_icon">
+    ${weather_icon(weatherList[0].weather[0].description, dateList[0].getHours())}
+    </div>
     ${weatherList[0].main.temp.toFixed(1)}°
     </div>
     <div class="min_max">
@@ -120,6 +171,7 @@ const render = () => {
         <div>습도</div>
     </div>`
 
+    let DateHTML = ''
     let Today = dateList[0].getDate()
     // console.log('date', dateList)
     // console.log('dateDay', dateList[0].getDate())
@@ -139,9 +191,14 @@ const render = () => {
                 <div class="feels_like">${weatherList[i].main.feels_like.toFixed(1)}°</div>
                 <div class="humidity">${weatherList[i].main.humidity}%</div>
             </div>`
+            if(dateList[i].getHours() == 0){
+                DateHTML += `<div style="opacity:1;">${dateList[i].getDate()}일</div>`
+            }else{
+                DateHTML += `<div></div>`
+            }
         }
     }
-
+    document.querySelector('.date_box').innerHTML = DateHTML
     document.querySelector('.forecast').innerHTML = forecast_renderHTML
 }
 
@@ -177,7 +234,7 @@ const myLocation = () => {
             const lat = position.coords.latitude;
             const lon = position.coords.longitude;
     
-            url = new URL(`httP://api.openweathermap.org/data/2.5/forecast?lang=kr&lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
+            url = new URL(`httP://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
             NoRepeat()
         });
     }
